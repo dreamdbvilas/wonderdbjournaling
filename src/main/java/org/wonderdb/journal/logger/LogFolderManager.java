@@ -51,9 +51,31 @@ class LogFolderManager {
 	
 	private LogFolderManager() {
 	}
-	
+
 	public static LogFolderManager getInstance() {
 		return instance;
+	}
+	
+	public void shutdown() {
+		notAppliedRedoFileMap.put(Long.MAX_VALUE, currentFile);
+		
+		try {
+			applyNow();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		Iterator<FileChannel> iter = notAppliedRedoFileMap.values().iterator();
+		while (iter.hasNext()) {
+			FileChannel channel = iter.next();
+			try {
+				channel.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public synchronized void log(ConcurrentLinkedQueue<TxnData> txnData) throws IOException {

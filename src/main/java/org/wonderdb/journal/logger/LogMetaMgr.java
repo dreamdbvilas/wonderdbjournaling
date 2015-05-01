@@ -7,6 +7,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -49,6 +50,19 @@ public class LogMetaMgr {
 	ConcurrentMap<String, Byte> stringToByteMap = new ConcurrentHashMap<String, Byte>();
 	ConcurrentMap<Byte, AsynchronousFileChannel> byteToChannelMap = new ConcurrentHashMap<Byte, AsynchronousFileChannel>();
 	AtomicLong lastSyncTime = new AtomicLong(-1);
+	
+	public void shutdonw() {
+		Iterator<AsynchronousFileChannel> iter = byteToChannelMap.values().iterator();
+		while (iter.hasNext()) {
+			AsynchronousFileChannel channel = iter.next();
+			try {
+				channel.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 	
 	void init(String folderPath) throws IOException {
 		String metaFilePath = folderPath + "/meta";

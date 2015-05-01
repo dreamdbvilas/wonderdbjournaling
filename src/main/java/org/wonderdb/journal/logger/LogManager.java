@@ -30,7 +30,8 @@ public class LogManager {
 	AtomicInteger txnCounter = new AtomicInteger(0);
 	ConcurrentMap<Integer, ConcurrentLinkedQueue<TxnData>> inflightTxns = new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<TxnData>>();
 	public static enum applyType { Every, SoOften, OnLogSwitch, None };
-
+	boolean shuttingDown = false;
+	
 	private static LogManager instance = new LogManager();
 	
 	private LogManager() {
@@ -46,7 +47,18 @@ public class LogManager {
 		LogApplier.getInstance().init(type, applyFrequency);
 	}
 	
+	public void shutdown() {
+		shuttingDown = true;
+		
+		LogApplier.getInstance().shutdown();
+		LogFolderManager.getInstance().shutdown();
+		LogMetaMgr.getInstance().shutdonw();
+	}
+	
 	public TransactionId startTxn() {
+		if (shuttingDown) {
+			throw new RuntimeException("Shutting down no new transactions allowed");
+		}
 		TransactionId id = new TransactionId(txnCounter.getAndIncrement());
 		ConcurrentLinkedQueue<TxnData> q = new ConcurrentLinkedQueue<LogManager.TxnData>();
 		inflightTxns.put(id.txnId, q);
@@ -110,7 +122,6 @@ public class LogManager {
 		buffer = ChannelBuffers.wrappedBuffer("athavale".getBytes());
 		LogManager.getInstance().logTxn(id, "txn2", 300, buffer);
 		LogManager.getInstance().commit(id);
-		
-		int i = 0;
+		LogManager.getInstance().shutdown();
 	}
 }
